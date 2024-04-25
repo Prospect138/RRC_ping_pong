@@ -2,12 +2,12 @@
 
 void RRCConnectionSetupEncoder(uint8_t **response_buffer, ssize_t *len) {
 
-    RRCConnectionSetup_t* setup = NULL;
+    RRCConnectionSetup_t* setup;
     setup = (RRCConnectionSetup_t*)calloc(1, sizeof(RRCConnectionSetup_t));
     setup -> criticalExtensions.present = RRCConnectionSetup__criticalExtensions_PR_c1;
     setup -> criticalExtensions.choice.c1.present = RRCConnectionSetup__criticalExtensions__c1_PR_rrcConnectionSetup_r8;
 
-    setup -> criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig = NULL;
+    //setup -> criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig = NULL;
     setup -> criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig = (MAC_MainConfig_t*)calloc(1, sizeof(MAC_MainConfig_t));
     setup -> criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig -> present = RadioResourceConfigDedicated__mac_MainConfig_PR_defaultValue;
     setup -> criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig -> choice.defaultValue = 1;
@@ -21,4 +21,13 @@ void RRCConnectionSetupEncoder(uint8_t **response_buffer, ssize_t *len) {
 
     *response_buffer = res.buffer;
     *len = res.result.encoded;
+
+    if (*response_buffer == NULL) {
+        fprintf(stderr, "Error enconing rrc buffer\n");
+        exit(1);
+    } else {
+        fprintf(stderr, "Encoded buffer\n");
+    }
+
+    xer_fprint(stdout, &asn_DEF_RRCConnectionSetup, setup);
 }

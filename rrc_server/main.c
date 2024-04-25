@@ -11,11 +11,12 @@
 #include <stdbool.h>
 
 #include "rrc_encoders_decoders.h"
+#include "src/RRCConnectionSetupComplete.h"
 
 #define PORT 36412
 #define BUFFER_SIZE 1024
 
-
+// за основу сервера брал файл из лекций
 
 int main() {
     int server_fd, new_socket;
@@ -67,6 +68,10 @@ int main() {
     // read data from the client and print it
     ssize_t valread;
     valread = sctp_recvmsg(new_socket, buffer, BUFFER_SIZE,  NULL, 0, 0, 0);
+    if (valread < 0) {
+        printf("Error when recieving msg\n");
+        exit(1);
+    }
     // Print the received data
     printf("Received data:\n%s\n", buffer);
 
@@ -78,34 +83,45 @@ int main() {
         exit(1);
     }
 
-    memset(buffer, 0, sizeof(buffer));
-    //free(buffer);
     bool is_random = request->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.present == InitialUE_Identity_PR_randomValue;
     bool is_good_bit = request->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.choice.randomValue.bits_unused == 0;
     
+    // вообще стоило бы использовать старый буфер, но я ловлю сегфолты, поэтому пусть останется так
     uint8_t *response_buffer;
     ssize_t response_len;
-
 
     if (is_random && is_good_bit){
         RRCConnectionSetupEncoder(&response_buffer, &response_len);
         printf("request formed\n");
     }
-    //else {
-    //}
+    else {
+        char* reject = "dummy RRCConnectionReject";
+        response_len = strlen(reject) + 1;
+        response_buffer = (uint8_t *)malloc(response_len);
+        if (response_buffer == NULL) {
+            perror("Memory allocation failed");
+            exit(EXIT_FAILURE);
+        }
+    }
     
     // Send the response to the client
-
-    valread = sctp_sendmsg(new_socket, &response_buffer, response_len, NULL, 0, 0, 0, 0, 0, 0);
+    valread = sctp_sendmsg(new_socket, response_buffer, response_len, NULL, 0, 0, 0, 0, 0, 0);
     if (valread < 0) {
         printf("Error when sending msg\n");
         exit(1);
     }
 
-    //free(response_buffer);
+    uint8_t compelete_response[BUFFER_SIZE] = {0};
+    valread = sctp_recvmsg(new_socket, compelete_response, BUFFER_SIZE,  NULL, 0, 0, 0);
+    if (valread < 0) {
+        printf("Error when recieving msg\n");
+        exit(1);
+    }
+    // Print the received data
+    printf("Received data:\n%s\n", compelete_response);
 
+    free(response_buffer);
 
-    // close the socket
     close(server_fd);
     return 0;
 }
