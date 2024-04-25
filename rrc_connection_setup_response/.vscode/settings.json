@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "ul-ccch-message.h": "c",
+        "rrcconnectionrequest.h": "c"
+    }
+}
